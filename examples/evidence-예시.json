@@ -1,0 +1,390 @@
+{
+ "_about": "합성 예시다. 스킬 두 개(주간-보고, 문의-답장)와 프로그램 하나(run_daily.py)는 모두 지어낸 가짜다. inventory.py 가 낸 빈 근거 칸을 모델이 채운 모습을 보여 주며, 확실, 불확실, 판단 필요가 모두 나오게 채웠다. 주간-보고#c7 의 notes_section 은 inventory 가 미리 채운 그대로 두었다. 후보마다 facts 의 status, why, source 만 채운다. 갈 곳은 scripts/judge.py 가 정한다.",
+ "label": "합성 예시다. 스킬 두 개와 프로그램 하나는 모두 지어낸 가짜다.",
+ "root": "examples/before",
+ "skills": {
+  "문의-답장": {
+   "path": "examples/before/문의-답장",
+   "consumers": [
+    {
+     "where": "run_daily.py:9",
+     "text": "SKILL = HERE / \"문의-답장\" / \"SKILL.md\"",
+     "own_folder": false,
+     "reads_body": "maybe",
+     "read_at": "run_daily.py:13"
+    }
+   ]
+  },
+  "주간-보고": {
+   "path": "examples/before/주간-보고",
+   "consumers": []
+  }
+ },
+ "candidates": [
+  {
+   "id": "문의-답장#c1",
+   "skill": "문의-답장",
+   "target": {
+    "kind": "section",
+    "title": "## 답장 형식",
+    "line": 21,
+    "lines": 5
+   },
+   "suggest": "references",
+   "signals": [
+    "title:format"
+   ],
+   "facts": {
+    "read_by_program": {
+     "status": "yes",
+     "why": "예약 스크립트가 SKILL.md 를 통째로 읽어 프롬프트에 넣는다",
+     "source": "run_daily.py:13"
+    },
+    "restricted_runner": {
+     "status": "unknown",
+     "why": "",
+     "source": ""
+    },
+    "notes_section": {
+     "status": "unknown",
+     "why": "",
+     "source": ""
+    },
+    "copied_verbatim": {
+     "status": "unknown",
+     "why": "",
+     "source": ""
+    },
+    "needed_every_run": {
+     "status": "unknown",
+     "why": "",
+     "source": ""
+    }
+   },
+   "note": ""
+  },
+  {
+   "id": "문의-답장#c2",
+   "skill": "문의-답장",
+   "target": {
+    "kind": "section",
+    "title": "## 안 될 때",
+    "line": 27,
+    "lines": 3
+   },
+   "suggest": "references",
+   "signals": [
+    "title:fallback"
+   ],
+   "facts": {
+    "read_by_program": {
+     "status": "yes",
+     "why": "",
+     "source": ""
+    },
+    "restricted_runner": {
+     "status": "unknown",
+     "why": "",
+     "source": ""
+    },
+    "notes_section": {
+     "status": "unknown",
+     "why": "",
+     "source": ""
+    },
+    "copied_verbatim": {
+     "status": "unknown",
+     "why": "",
+     "source": ""
+    },
+    "needed_every_run": {
+     "status": "unknown",
+     "why": "",
+     "source": ""
+    }
+   },
+   "note": ""
+  },
+  {
+   "id": "주간-보고#c1",
+   "skill": "주간-보고",
+   "target": {
+    "kind": "block",
+    "title": "### 1. 자료 모으기",
+    "line": 21,
+    "lines": 5,
+    "lang": "bash",
+    "before": "일 기록 파일(`기록/이번주.csv`)에서 이번 주 줄 수를 먼저 본다."
+   },
+   "suggest": "scripts",
+   "signals": [
+    "inline-code"
+   ],
+   "facts": {
+    "irreversible": {
+     "status": "no",
+     "why": "파일을 읽고 줄 수를 찍기만 한다",
+     "source": "SKILL.md:21"
+    },
+    "needs_judgment": {
+     "status": "no",
+     "why": "정해진 셈이다",
+     "source": "SKILL.md:21"
+    },
+    "single_command": {
+     "status": "no",
+     "why": "다섯 줄짜리 파이썬을 붙여 넣어 돌린다",
+     "source": "SKILL.md:21"
+    },
+    "observed": {
+     "status": "yes",
+     "why": "2026-01-09 실제로 돌려 45건을 봤다",
+     "source": "SKILL.md:59"
+    }
+   },
+   "note": ""
+  },
+  {
+   "id": "주간-보고#c2",
+   "skill": "주간-보고",
+   "target": {
+    "kind": "lines",
+    "title": "### 1. 자료 모으기",
+    "line": 31,
+    "lines": 4
+   },
+   "suggest": "scripts",
+   "signals": [
+    "command-sequence"
+   ],
+   "facts": {
+    "irreversible": {
+     "status": "yes",
+     "why": "4번이 요약표를 팀장에게 보낸다",
+     "source": "SKILL.md:34"
+    },
+    "needs_judgment": {
+     "status": "no",
+     "why": "명령을 차례로 돌릴 뿐이다",
+     "source": "SKILL.md:31"
+    },
+    "single_command": {
+     "status": "no",
+     "why": "명령 넷",
+     "source": "SKILL.md:31"
+    },
+    "observed": {
+     "status": "yes",
+     "why": "시험 기록에 돌린 결과가 있다",
+     "source": "SKILL.md:59"
+    }
+   },
+   "note": ""
+  },
+  {
+   "id": "주간-보고#c3",
+   "skill": "주간-보고",
+   "target": {
+    "kind": "lines",
+    "title": "### 2. 결과 읽기",
+    "line": 38,
+    "lines": 5
+   },
+   "suggest": "scripts",
+   "signals": [
+    "lookup-table"
+   ],
+   "facts": {
+    "irreversible": {
+     "status": "no",
+     "why": "표를 읽기만 한다",
+     "source": "SKILL.md:38"
+    },
+    "needs_judgment": {
+     "status": "no",
+     "why": "결과 글자마다 할 일이 정해져 있다",
+     "source": "SKILL.md:38"
+    },
+    "single_command": {
+     "status": "no",
+     "why": "요약 명령 출력을 읽고 갈래를 고른다",
+     "source": "SKILL.md:38"
+    },
+    "observed": {
+     "status": "unknown",
+     "why": "",
+     "source": ""
+    }
+   },
+   "note": ""
+  },
+  {
+   "id": "주간-보고#c4",
+   "skill": "주간-보고",
+   "target": {
+    "kind": "lines",
+    "title": "### 3. 보고 쓰기",
+    "line": 46,
+    "lines": 1,
+    "hits": [
+     46
+    ]
+   },
+   "suggest": "scripts",
+   "signals": [
+    "calc-or-check"
+   ],
+   "facts": {
+    "irreversible": {
+     "status": "no",
+     "why": "날짜 셈만 한다",
+     "source": "SKILL.md:46"
+    },
+    "needs_judgment": {
+     "status": "no",
+     "why": "마감 시각이 정해져 있다",
+     "source": "SKILL.md:46"
+    },
+    "single_command": {
+     "status": "yes",
+     "why": "",
+     "source": ""
+    },
+    "observed": {
+     "status": "unknown",
+     "why": "",
+     "source": ""
+    }
+   },
+   "note": ""
+  },
+  {
+   "id": "주간-보고#c5",
+   "skill": "주간-보고",
+   "target": {
+    "kind": "block",
+    "title": "### 3. 보고 쓰기",
+    "line": 49,
+    "lines": 5,
+    "lang": "markdown",
+    "before": "보고는 아래 모양 그대로 채운다."
+   },
+   "suggest": "assets",
+   "signals": [
+    "template-block"
+   ],
+   "facts": {
+    "read_by_program": {
+     "status": "no",
+     "why": "--repo 로 찾은 곳이 없다",
+     "source": "inventory: consumers 없음"
+    },
+    "restricted_runner": {
+     "status": "no",
+     "why": "대화 중에만 쓰는 스킬이다",
+     "source": "SKILL.md:3"
+    },
+    "notes_section": {
+     "status": "no",
+     "why": "보고 틀이다",
+     "source": "SKILL.md:49"
+    },
+    "copied_verbatim": {
+     "status": "yes",
+     "why": "이 모양 그대로 채운다고 적혀 있다",
+     "source": "SKILL.md:48"
+    },
+    "needed_every_run": {
+     "status": "unknown",
+     "why": "",
+     "source": ""
+    }
+   },
+   "note": ""
+  },
+  {
+   "id": "주간-보고#c6",
+   "skill": "주간-보고",
+   "target": {
+    "kind": "section",
+    "title": "## 시험 기록",
+    "line": 57,
+    "lines": 4
+   },
+   "suggest": "references",
+   "signals": [
+    "title:history"
+   ],
+   "facts": {
+    "read_by_program": {
+     "status": "no",
+     "why": "--repo 로 찾은 곳이 없다",
+     "source": "inventory: consumers 없음"
+    },
+    "restricted_runner": {
+     "status": "no",
+     "why": "대화 중에만 쓰는 스킬이다",
+     "source": "SKILL.md:3"
+    },
+    "notes_section": {
+     "status": "no",
+     "why": "지난 시험 결과를 적은 곳이다",
+     "source": "SKILL.md:57"
+    },
+    "copied_verbatim": {
+     "status": "no",
+     "why": "산출물에 베껴 쓰지 않는다",
+     "source": "SKILL.md:57"
+    },
+    "needed_every_run": {
+     "status": "no",
+     "why": "절차 본문이 이 절을 가리키지 않는다",
+     "source": "SKILL.md:15"
+    }
+   },
+   "note": ""
+  },
+  {
+   "id": "주간-보고#c7",
+   "skill": "주간-보고",
+   "target": {
+    "kind": "section",
+    "title": "## 배운 것",
+    "line": 62,
+    "lines": 3
+   },
+   "suggest": "references",
+   "signals": [
+    "title:notes"
+   ],
+   "facts": {
+    "read_by_program": {
+     "status": "unknown",
+     "why": "",
+     "source": ""
+    },
+    "restricted_runner": {
+     "status": "unknown",
+     "why": "",
+     "source": ""
+    },
+    "notes_section": {
+     "status": "yes",
+     "source": "SKILL.md:62",
+     "why": "제목에 '배운 것' 이 있음(inventory 가 미리 채움. 배운 것을 적어 가는 자리가 아니면 no 로 고친다)"
+    },
+    "copied_verbatim": {
+     "status": "unknown",
+     "why": "",
+     "source": ""
+    },
+    "needed_every_run": {
+     "status": "unknown",
+     "why": "",
+     "source": ""
+    }
+   },
+   "note": ""
+  }
+ ]
+}

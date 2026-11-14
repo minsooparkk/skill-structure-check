@@ -1,0 +1,16 @@
+{
+ "_about": "scripts/inventory.py 가 후보를 고를 때 쓰는 낱말이다. 한국어와 영어가 들어 있다. 다른 언어는 묶음마다 낱말을 더하면 된다. 영어(ASCII) 낱말은 낱말 경계로, 그 밖의 낱말은 글자 그대로 찾는다. 큰 글자와 작은 글자는 가리지 않는다.",
+ "title_groups": {
+  "history": ["시험 기록", "지난 기록", "옛 메모", "변경 기록", "이력", "changelog", "history", "test log", "test notes"],
+  "fallback": ["손 절차", "손으로", "안 될 때", "안될 때", "문제 해결", "troubleshooting", "manual", "fallback"],
+  "format": ["모양", "형식", "스키마", "schema", "format"],
+  "notes": ["배운 것", "알게 된 것", "lessons", "learned", "notes"],
+  "background": ["구성", "구조", "배경", "원리", "설계", "운영", "architecture", "background", "internals", "rationale", "operations", "runbook"]
+ },
+ "template_titles": ["틀", "양식", "문안", "서명", "template", "boilerplate", "signature"],
+ "table_meaning_words": ["뜻", "할 일", "대응", "조치", "의미", "meaning", "action", "todo", "next", "fix"],
+ "calc_words": ["계산", "셈", "며칠", "기간 계산", "날짜 계산", "며칠 전", "며칠 뒤", "남은 날", "글자 수", "형식 검사", "형식이 맞는지", "정규식", "calculate", "compute", "validate", "regex", "checksum", "word count", "date math"],
+ "command_words": ["python", "python3", "node", "npm", "npx", "pip", "uv", "git", "gh", "curl", "wget", "bash", "sh", "zsh", "cd", "ls", "cat", "grep", "sed", "awk", "jq", "find", "echo", "make", "docker", "kubectl", "brew", "ffmpeg", "sqlite3", "psql", "ssh", "scp", "rsync", "cp", "mv", "mkdir", "open", "pwsh"],
+ "code_langs": ["bash", "sh", "shell", "zsh", "console", "terminal", "python", "py", "python3", "js", "javascript", "ts", "typescript", "node", "powershell", "ps1", "pwsh", "bat", "cmd", "sql", "ruby", "go"],
+ "read_words": ["read_text", "read_bytes", "open(", "readFile", "readFileSync", "readlines", ".read()", "cat ", "Get-Content", "fs.read", "File.read", "ReadFile"]
+}

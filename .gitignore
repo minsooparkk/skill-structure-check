@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.skill-backup/
+작업폴더/
+*.new.json
+.DS_Store

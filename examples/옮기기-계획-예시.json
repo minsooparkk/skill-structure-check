@@ -1,0 +1,38 @@
+{
+ "_about": "합성 예시다. judge.py 가 낸 move-plan.skeleton.json 의 '<채울 것>' 자리를 채운 모습이다. 스킬 이름과 문장은 모두 지어냈다.",
+ "root": "examples/before",
+ "note": "2026-01-20 SKILL.md 에서 글자 그대로 옮겼다(가짜 예시). 고칠 때는 이 파일을 고친다.",
+ "skills": {
+  "주간-보고": {
+   "refs": {
+    "references/시험-기록.md": {
+     "title": "시험 기록",
+     "when": "요약표 출력 모양이 달라진 것 같을 때 견줘 본다. 새로 시험하면 여기에 날짜와 함께 더한다"
+    }
+   },
+   "ops": [
+    {
+     "kind": "block",
+     "start": "보고는 아래 모양 그대로 채운다.",
+     "extra": 0,
+     "dest": "assets/보고-틀.md",
+     "raw": true,
+     "pointer": [
+      "보고 틀은 `assets/보고-틀.md` 에 있다. 이 파일을 베껴 `<…>` 자리와 날짜를 채운다."
+     ]
+    },
+    {
+     "kind": "section",
+     "head": "## 시험 기록",
+     "dest": "references/시험-기록.md",
+     "keep_heading": true,
+     "pointer": [
+      "지난 시험 기록은 `references/시험-기록.md` 에 있다. 요약표 출력 모양이 달라진 것 같을 때 견줘 보고, 새로 시험하면 그 파일에 날짜와 함께 더한다."
+     ]
+    }
+   ],
+   "allow_lost": 0,
+   "bump_version": true
+  }
+ }
+}
