@@ -344,6 +344,71 @@ class Apply(Base):
         self.assertTrue((self.root / "stage" / "가" / "SKILL.md").is_file())     # --stage 로 받은 폴더는 두고
         self.assertNotIn("임시 폴더를 지웠다", out)
 
+    def test_append_adds_to_an_existing_file_and_can_be_undone(self):
+        """전에 옮기다 남은 줄을 이미 있는 딸린 파일 끝에 붙인다. 머리는 다시 붙이지 않고, 옛 파일은 사본으로 남는다."""
+        old_ref = "# 가 · 시험 기록\n\n> 가 스킬의 딸린 자료다. 전에 옮긴 글.\n\n- 2025-12-31 전에 옮긴 줄.\n"
+        ref = self.put("skills/가/references/시험-기록.md", old_ref)
+        op = {"kind": "to", "start": "- 2026-01-01 처음 돌림.", "end": "### 시험 기록 안쪽", "dest": "references/시험-기록.md", "append": True,
+              "pointer": []}
+        code, out, _ = self.run_main(self.plan([op]))
+        self.assertEqual(code, 0, out)
+        self.assertIn("덧붙이는 파일 1개", out)
+        self.assertNotIn("이미 있는 파일", out)                 # 덧붙이기는 '이미 있음'으로 막지 않는다
+        self.assertEqual(ref.read_text(encoding="utf-8"), old_ref)   # 대조만 했을 때는 그대로
+        undo = self.root / "undo.sh"
+        code, out, _ = self.run_main(self.plan([op]), "--apply", "--backup-dir", str(self.root / "bk"), "--undo-file", str(undo))
+        self.assertEqual(code, 0, out)
+        self.assertEqual(ref.read_text(encoding="utf-8"), old_ref + "\n- 2026-01-01 처음 돌림.\n")
+        self.assertEqual(ref.read_text(encoding="utf-8").count("# 가 · "), 1)
+        self.assertNotIn("- 2026-01-01 처음 돌림.", self.doc.read_text(encoding="utf-8"))
+        kept = self.root / "bk" / "가" / "references__시험-기록.md"
+        self.assertEqual(kept.read_text(encoding="utf-8"), old_ref)
+        script = undo.read_text(encoding="utf-8")
+        self.assertTrue(script.startswith("#!/bin/sh\n"))
+        self.assertIn(f'cp "{kept}" "{ref}"', script)
+        self.assertIn(f'cp "{self.root / "bk" / "가" / "SKILL.md"}" "{self.doc}"', script)
+        self.assertNotIn("rm ", script)                         # 새로 만든 파일이 없으니 지울 것도 없다
+        self.assertIn("되돌리기 파일:", out)
+
+    def test_append_needs_the_file_and_does_not_mix(self):
+        op = {"kind": "to", "start": "- 2026-01-01 처음 돌림.", "end": "### 시험 기록 안쪽", "dest": "references/없는-파일.md", "append": True}
+        code, out, _ = self.run_main(self.plan([op]), "--apply")
+        self.assertEqual(code, 1)
+        self.assertIn("append 로 덧붙일 파일을 읽지 못함", out)
+        self.assertEqual(self.doc.read_text(encoding="utf-8"), DOC)
+        mixed = [dict(op, dest="references/x.md"), {"kind": "section", "head": "## 배운 것", "dest": "references/x.md"}]
+        code, _, err = self.run_main(self.plan(mixed))
+        self.assertEqual(code, 2)
+        self.assertIn("append 와 새로 쓰기가 섞였습니다", err)
+        code, _, err = self.run_main(self.plan([dict(op, append="예")]))
+        self.assertEqual(code, 2)
+
+    def test_appended_file_changed_in_between_is_skipped(self):
+        ref = self.put("skills/가/references/시험-기록.md", "# 옛 글\n")
+        op = {"kind": "to", "start": "- 2026-01-01 처음 돌림.", "end": "### 시험 기록 안쪽", "dest": "references/시험-기록.md", "append": True}
+        real = mv.lost_lines
+
+        def touch(*a, **k):                                     # 만든 뒤, 바꾸기 전에 누가 그 파일을 고친 경우
+            ref.write_text("# 옛 글\n누가 그 사이에 더한 줄\n", encoding="utf-8")
+            return real(*a, **k)
+
+        with patch.object(mv, "lost_lines", touch):
+            code, out, _ = self.run_main(self.plan([op]), "--apply", "--undo-file", str(self.root / "undo.sh"))
+        self.assertEqual(code, 1)
+        self.assertIn("그 사이 덧붙일 파일이 바뀜", out)
+        self.assertEqual(self.doc.read_text(encoding="utf-8"), DOC)
+        self.assertEqual(ref.read_text(encoding="utf-8"), "# 옛 글\n누가 그 사이에 더한 줄\n")
+        self.assertFalse((self.root / "undo.sh").exists())        # 바꾼 것이 없으면 되돌리기 파일도 없다
+
+    def test_undo_file_lists_new_files_to_remove(self):
+        undo = self.root / "되돌리기.sh"
+        code, out, _ = self.run_main(self.plan([SECTION, BLOCK]), "--apply", "--undo-file", str(undo))
+        self.assertEqual(code, 0, out)
+        script = undo.read_text(encoding="utf-8")
+        self.assertIn(f'rm "{self.skills / "가" / "references" / "시험-기록.md"}"', script)
+        self.assertIn(f'rm "{self.skills / "가" / "assets" / "답장-틀.txt"}"', script)
+        self.assertEqual(script.count("cp "), 1)
+
     def test_nfd_folder_name_is_found(self):
         nfd = unicodedata.normalize("NFD", "다라")
         self.put(f"skills/{nfd}/SKILL.md", DOC.replace("name: 가", "name: 다라"))

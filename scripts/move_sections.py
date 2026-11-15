@@ -5,7 +5,7 @@
 
 쓰는 법:
   python3 scripts/move_sections.py <계획.json> [--root <스킬들이 든 폴더>] [--stage <임시 폴더>]
-                                    [--apply] [--backup-dir <폴더>] [--force]
+                                    [--apply] [--backup-dir <폴더>] [--force] [--undo-file <파일>]
   예: python3 scripts/move_sections.py ~/스킬점검/작업/move-plan.json --root ~/.claude/skills          (대조만)
       python3 scripts/move_sections.py ~/스킬점검/작업/move-plan.json --root ~/.claude/skills --apply  (바꿈)
 계획의 op(고르는 자리는 그 SKILL.md 에서 정확히 한 번 나와야 한다):
@@ -15,14 +15,18 @@
   insert   anchor 가 든 줄 앞(where: before) 이나 뒤(after, 기본)에 text 줄들을 넣는다.
   replace  anchor 가 든 줄에서 old(그 줄에 한 번) 를 new 로 바꾼다.
 references 로 가는 글 맨 위 머리: "# <스킬> · <title>" / "> <스킬> 스킬의 딸린 자료다. <when>." / "> <note>". raw 이면 머리 없이.
+옮기는 op(section, to, block)에 "append": true 를 주면 이미 있는 dest 파일 끝에 빈 줄 하나를 두고 덧붙인다(머리 없이).
+  전에 옮기다 남은 줄을 제자리 파일로 보낼 때 쓴다. 그 파일이 없으면 그 스킬은 만들지 않는다. 한 dest 에 append 와 새로 쓰기를 섞지 않는다.
 줄 대조: 원래 SKILL.md 의 빈 줄 아닌 모든 줄(울타리 줄, 올린 version 줄 빼고)이 새 SKILL.md 나 딸린 파일(이미 있는
   references·assets 포함) 어딘가에 그대로 있어야 한다. 빠진 줄 수가 replace 수 + allow_lost 를 넘으면 그 스킬은 실패.
   고른 자리끼리 겹치거나, 코드 블록을 반만 골라 새 SKILL.md 에 닫히지 않은 블록이 생겨도 그 스킬은 만들지 않는다.
 --apply: 하나라도 실패면 아무것도 바꾸지 않는다. 스킬마다 ① 만들 때 읽은 원본과 지금 원본의 해시를 견주고(다르면 건너뜀)
   ② 원본을 사본 폴더(기본 <root>/.skill-backup/<날짜-시각>/<스킬>/SKILL.md)에 두고 ③ 딸린 파일을 쓰고(같은 이름이
-  이미 있으면 --force 없이는 그 스킬을 건너뜀) ④ SKILL.md 를 임시 파일에 쓴 뒤 바꿔 끼운다(권한은 원래 파일 그대로,
+  이미 있으면 --force 없이는 그 스킬을 건너뜀. append 로 덧붙이는 파일은 사본을 뜨고, 그 사이 바뀌었으면 건너뜀)
+  ④ SKILL.md 를 임시 파일에 쓴 뒤 바꿔 끼운다(권한은 원래 파일 그대로,
   새 파일은 보통 새 파일 권한). --stage 없이 돌려 스스로 만든 임시 폴더는 --apply 가 모두 성공하면 지운다
-  (대조만 했거나 실패했으면 남기고 자리를 찍는다).
+  (대조만 했거나 실패했으면 남기고 자리를 찍는다). --undo-file 을 주면 끝에 찍는 되돌리기 명령을 그 파일에도 적는다
+  (스킬이 여럿일 때 한 번에 되돌리게).
 하지 않는 것: 옮길 글을 고쳐 쓰지 않는다. 계획에 없는 곳을 건드리지 않는다. git 을 쓰지 않는다.
 종료 코드: 0 = 됨, 1 = 못 만든 스킬, 대조 실패, 건너뛴 스킬이 있음, 2 = 계획 파일이나 인자 문제.
 """
@@ -93,7 +97,7 @@ def check_plan(plan):
             raise PlanError(f"{name}: refs 는 객체여야 합니다")
         if not isinstance(sk.get("allow_lost", 0), int) or sk.get("allow_lost", 0) < 0:
             raise PlanError(f"{name}: allow_lost 는 0 이상의 정수여야 합니다")
-        raw_of = {}
+        raw_of, app_of = {}, {}
         for n, op in enumerate(sk["ops"], 1):
             if not isinstance(op, dict) or op.get("kind") not in KINDS:
                 raise PlanError(f"{name} op{n}: kind 는 {', '.join(KINDS)} 가운데 하나")
@@ -109,6 +113,10 @@ def check_plan(plan):
                 raw = bool(op.get("raw"))
                 if raw_of.setdefault(op["dest"], raw) != raw:
                     raise PlanError(f"{name}: 같은 dest 에 raw 와 raw 아님이 섞였습니다: {op['dest']}")
+                if not isinstance(op.get("append", False), bool):
+                    raise PlanError(f"{name} op{n}: append 는 true 나 false")
+                if app_of.setdefault(op["dest"], bool(op.get("append"))) != bool(op.get("append")):
+                    raise PlanError(f"{name}: 같은 dest 에 append 와 새로 쓰기가 섞였습니다: {op['dest']}")
                 p = op.get("pointer", [])
                 if isinstance(p, str):
                     op["pointer"] = [p]
@@ -242,7 +250,7 @@ def build(skill, text, spec, note=""):
             close = next(bl["close"] for bl in blocks if bl["open"] == a)
             chunk = lines[a + 1:close] + lines[close + 1:b]
         moved.setdefault(op["dest"], []).append((a, chunk))
-        raw_of[op["dest"]] = raw
+        raw_of[op["dest"]] = raw or bool(op.get("append"))   # 덧붙이는 글은 머리 없이 몸만(main 이 있는 파일 뒤에 붙인다)
         pointer = list(op.get("pointer", []))
         if k == "section" and op.get("keep_heading"):
             out[a:b] = [lines[a]] + ([""] + pointer if pointer else [])
@@ -356,6 +364,7 @@ def main(argv=None, now=None):
     ap.add_argument("--apply", action="store_true", help="대조가 모두 맞으면 실제로 바꾼다")
     ap.add_argument("--backup-dir", help="원본 사본을 둘 폴더(기본 <root>/.skill-backup/<날짜-시각>)")
     ap.add_argument("--force", action="store_true", help="같은 이름의 딸린 파일이 있어도 덮는다(덮기 전 사본을 뜬다)")
+    ap.add_argument("--undo-file", help="되돌리기 명령을 적어 둘 파일(--apply 로 바꾼 것이 있을 때만 쓴다)")
     a = ap.parse_args(argv)
     now = now or datetime.now()
     try:
@@ -401,22 +410,36 @@ def main(argv=None, now=None):
             print(f"못 만듦  {name}: {e}")
             ok = False
             continue
+        app_digest, app_err = {}, ""
+        for rel in sorted({op["dest"] for op in spec["ops"] if op.get("append") and op["kind"] in ("section", "to", "block")}):
+            try:
+                cur = (sdir / rel).read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError) as e:
+                app_err = f"append 로 덧붙일 파일을 읽지 못함: {rel}({e.__class__.__name__})"
+                break
+            app_digest[rel] = hashlib.sha256(cur.encode("utf-8")).hexdigest()
+            files[rel] = cur.rstrip("\n") + "\n\n" + files[rel]
+        if app_err:
+            print(f"못 만듦  {name}: {app_err}")
+            ok = False
+            continue
         lost = lost_lines(old, new, files, existing_extra(sdir), [old_version] if old_version else [])
         allowed = sum(1 for op in spec["ops"] if op["kind"] == "replace") + spec.get("allow_lost", 0)
         d = stage / nfc(name)
         write_atomic(d / "SKILL.md", new)
         for rel, txt in files.items():
             write_atomic(d / rel, txt)
-        clash = [rel for rel in files if (sdir / rel).exists()]
+        clash = [rel for rel in files if (sdir / rel).exists() and rel not in app_digest]
         state = "맞음" if len(lost) <= allowed else f"빠진 줄 {len(lost)}개(허용 {allowed})"
         print(f"{name}: SKILL.md {kb(len(old.encode('utf-8')))}({old.count(chr(10))}줄) → {kb(len(new.encode('utf-8')))}({new.count(chr(10))}줄)"
-              f" · 딸린 파일 {len(files)}개 · 줄 대조 {state}" + (f" · 이미 있는 파일 {len(clash)}개" if clash else ""))
+              f" · 딸린 파일 {len(files)}개 · 줄 대조 {state}" + (f" · 이미 있는 파일 {len(clash)}개" if clash else "")
+              + (f" · 덧붙이는 파일 {len(app_digest)}개" if app_digest else ""))
         if len(lost) > allowed:
             ok = False
             for ln in lost[:10]:
                 print(f"    빠짐: {ln.strip()[:100]}")
             continue
-        done.append((name, sdir, path, digest, new, files, clash))
+        done.append((name, sdir, path, digest, new, files, clash, app_digest))
     print(f"만든 곳: {stage}")
     if not ok:
         print("못 만들었거나 대조가 안 맞는 스킬이 있어 아무것도 바꾸지 않음")
@@ -426,10 +449,19 @@ def main(argv=None, now=None):
         return 0
 
     undo = []
-    for name, sdir, path, digest, new, files, clash in done:
+    for name, sdir, path, digest, new, files, clash, app_digest in done:
         now_text = path.read_text(encoding="utf-8")
         if hashlib.sha256(now_text.encode("utf-8")).hexdigest() != digest:
             print(f"건너뜀  {name}: 그 사이 원본이 바뀜")
+            ok = False
+            continue
+        try:
+            moved_on = [rel for rel, dg in app_digest.items()
+                        if hashlib.sha256((sdir / rel).read_text(encoding="utf-8").encode("utf-8")).hexdigest() != dg]
+        except (OSError, UnicodeDecodeError):
+            moved_on = sorted(app_digest)
+        if moved_on:
+            print(f"건너뜀  {name}: 그 사이 덧붙일 파일이 바뀜({', '.join(moved_on)})")
             ok = False
             continue
         if clash and not a.force:
@@ -444,19 +476,28 @@ def main(argv=None, now=None):
             bfile = bdir / f"SKILL.md.{n}"
         bfile.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(str(path), str(bfile))
-        for rel in clash:
+        kept = []
+        for rel in list(clash) + sorted(app_digest):
             shutil.copyfile(str(sdir / rel), str(bdir / rel.replace("/", "__")))
+            kept.append((bdir / rel.replace("/", "__"), sdir / rel))
         for rel, txt in files.items():
             write_atomic(sdir / rel, txt)
         write_atomic(path, new)
         print(f"바꿔 끼움  {name}  (사본 {bfile})")
-        undo.append((bfile, path, [sdir / rel for rel in files if rel not in clash]))
+        undo.append((bfile, path, [sdir / rel for rel in files if rel not in clash and rel not in app_digest], kept))
     if undo:
+        cmds = []
+        for bfile, path, made, kept in undo:
+            cmds.append(f'cp "{bfile}" "{path}"')
+            cmds += [f'cp "{b}" "{t}"' for b, t in kept]     # 덮었거나 덧붙인 딸린 파일은 옛 글로
+            cmds += [f'rm "{m}"' for m in made]
         print("되돌리기:")
-        for bfile, path, made in undo:
-            print(f'  cp "{bfile}" "{path}"')
-            for m in made:
-                print(f'  rm "{m}"')
+        for c in cmds:
+            print("  " + c)
+        if a.undo_file:
+            write_atomic(Path(a.undo_file), "#!/bin/sh\n# move_sections.py 가 " + now.strftime("%Y-%m-%d %H:%M") + " 에 바꾼 것을 되돌린다.\n"
+                         + "\n".join(cmds) + "\n")
+            print(f"되돌리기 파일: {a.undo_file}")
     if ok and own_stage:
         shutil.rmtree(str(stage), ignore_errors=True)
         print(f"임시 폴더를 지웠다: {stage}")

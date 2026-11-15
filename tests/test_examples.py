@@ -87,7 +87,7 @@ class EndToEnd(unittest.TestCase):
 class Files(unittest.TestCase):
     def test_examples_say_they_are_fake(self):
         for p in ("before/주간-보고/SKILL.md", "before/문의-답장/SKILL.md", "before/run_daily.py",
-                  "after/주간-보고/SKILL.md", "evidence-예시.json", "옮기기-계획-예시.json", "report-예시.md"):
+                  "after/주간-보고/SKILL.md", "evidence-예시.json", "옮기기-계획-예시.json", "report-예시.md", "묶음-근거-예시.json"):
             self.assertIn("가짜", (EX / p).read_text(encoding="utf-8"), p)
 
     def test_templates_are_valid_python(self):
@@ -102,6 +102,25 @@ class Files(unittest.TestCase):
                 seen += 1
                 self.assertTrue((ROOT / rel).is_file(), f"{doc} 가 가리키는 {rel} 가 없음")
         self.assertGreater(seen, 8)
+
+    def test_skill_document_names_every_fact_the_judge_uses(self):
+        """문서의 근거 표(모델에게 주는 지시)와 judge.py 의 근거 이름(판정)은 한 쌍이다. 한쪽에만 있는 이름이 없어야 한다."""
+        doc = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        rows = set(re.findall(r"^\| `(\w+)` \|", doc, re.M))
+        used = {f for f, _, _ in judge.MOVE_ORDER} | {f for f, _, _ in judge.SCRIPT_ORDER}
+        self.assertEqual(rows, used)
+
+    def test_example_group_file_merges_into_example_evidence(self):
+        mg = load("merge_evidence")
+        base = json.loads((EX / "evidence-예시.json").read_text(encoding="utf-8"))
+        group = json.loads((EX / "묶음-근거-예시.json").read_text(encoding="utf-8"))
+        merged, ops, problems, st = mg.merge(base, [("묶음-근거-예시.json", group)], only=["references", "assets"])
+        self.assertEqual(problems, [])
+        self.assertEqual(st["manual"], 1)
+        rows, _ = judge.judge_all(merged)
+        got = {r["id"]: r["decision"] for r in rows}
+        self.assertEqual(got["문의-답장#m1"], "keep")              # 프로그램이 본문을 읽는 문서라 문안 한 줄도 그대로 둔다
+        self.assertEqual(ops["opinions"]["문의-답장#m1"]["opinion"], "keep")
 
     def test_no_em_dash_anywhere(self):
         for p in ROOT.rglob("*"):

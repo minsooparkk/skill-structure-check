@@ -1,0 +1,44 @@
+{
+ "_about": "합성 예시다. 스킬(문의-답장)과 프로그램(run_daily.py)은 모두 지어낸 가짜다. 스킬이 많아 나눠 읽을 때 읽는 쪽 하나가 내는 묶음 파일의 모습이다(틀은 assets/묶음-근거-틀.json). evidence-예시.json 과 함께 scripts/merge_evidence.py 에 넣어 볼 수 있다.",
+ "group": "1",
+ "candidates": [
+  {
+   "id": "문의-답장#c1",
+   "skill": "문의-답장",
+   "target": {"kind": "section", "title": "## 답장 형식", "line": 21, "lines": 5},
+   "suggest": "references",
+   "signals": ["title:format"],
+   "facts": {
+    "read_by_program": {"status": "yes", "why": "예약 스크립트가 SKILL.md 를 통째로 읽어 프롬프트에 넣는다", "source": "run_daily.py:13"},
+    "restricted_runner": {"status": "unknown", "why": "", "source": ""},
+    "notes_section": {"status": "no", "why": "답장 규칙이다", "source": "SKILL.md:21"},
+    "copied_verbatim": {"status": "no", "why": "베껴 쓰는 글이 아니라 쓰는 규칙이다", "source": "SKILL.md:23"},
+    "needed_every_run": {"status": "yes", "why": "답장을 쓸 때마다 본다", "source": "SKILL.md:21"}
+   },
+   "note": ""
+  },
+  {
+   "id": "문의-답장#m1",
+   "skill": "문의-답장",
+   "target": {"kind": "lines", "title": "## 절차", "line": 19, "lines": 1},
+   "suggest": "assets",
+   "signals": ["manual"],
+   "facts": {
+    "read_by_program": {"status": "yes", "why": "예약 스크립트가 SKILL.md 를 통째로 읽어 프롬프트에 넣는다", "source": "run_daily.py:13"},
+    "restricted_runner": {"status": "unknown", "why": "", "source": ""},
+    "notes_section": {"status": "no", "why": "절차 줄이다", "source": "SKILL.md:19"},
+    "copied_verbatim": {"status": "yes", "why": "따옴표 안의 문안을 그대로 쓰라고 적혀 있다", "source": "SKILL.md:19"},
+    "needed_every_run": {"status": "yes", "why": "모르는 질문이 올 때마다 쓴다", "source": "SKILL.md:19"}
+   },
+   "note": "훑기가 놓친 것: 절차 글 속에 풀어 적힌 문안 한 줄"
+  }
+ ],
+ "opinions": {
+  "문의-답장#c1": {"opinion": "keep", "why": "프로그램이 본문을 통째로 읽는다. 옮기면 그 모델이 규칙을 못 본다"},
+  "문의-답장#m1": {"opinion": "keep", "why": "한 문장짜리 문안이고 프로그램이 본문을 읽는다. 파일로 빼면 그 모델에게 안 보인다"}
+ },
+ "notes": [
+  "문의-답장: '## 안 될 때'(문의-답장#c2)는 세 줄이라 보지 않았다(안 봄)",
+  "문의-답장: 스크립트 안에 한 벌 더 있는 글은 없다(run_daily.py 는 문서를 읽기만 한다)"
+ ]
+}
